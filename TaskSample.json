@@ -1,0 +1,16 @@
+{"type": "vacation",
+    "submittedby": "howard",
+    "approvers": [{
+        "id": "sam",
+        "name": "Sam Adams"
+    },
+    {
+        "id": "john",
+        "name": "john smith" 
+    }],
+    "start": "2020-02-01",
+    "end":"2020-02-05",
+    "status": "pending"
+
+    
+}
