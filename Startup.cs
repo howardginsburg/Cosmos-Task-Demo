@@ -9,6 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Demo.Task
 {
+    /**
+        Dependency injection startup class that our Functions will take advantage of to get a Cosmos Client object.
+    */
     public class Startup : FunctionsStartup
     {
         private static IConfigurationRoot configuration = new ConfigurationBuilder()

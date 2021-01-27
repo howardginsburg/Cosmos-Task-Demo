@@ -5,11 +5,11 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
+    <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
     <!--Necessary for functions using the Cosmos trigger.  It contains references to the v2 SDK-->
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="3.0.5" />
-    <!--Adding the reference to the v3 SDK-->
+    <!--Reference to the v3 SDK-->
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.16.0" />
-    <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
