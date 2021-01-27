@@ -16,11 +16,11 @@ namespace Demo.Task
     /**
         UpdateTask function.
     */
-    public class UpdateTask
+    public class UpdateTaskFunction
     {
         private CosmosClient _cosmosClient;
         private Container _taskContainer;
-        public UpdateTask(CosmosClient cosmosClient)
+        public UpdateTaskFunction(CosmosClient cosmosClient)
         {
              //Get the cosmos client object that our Startup.cs creates through dependency injection.
             _cosmosClient = cosmosClient;
@@ -53,8 +53,8 @@ namespace Demo.Task
             //If the task is complete, use ttl to let it get deleted.  This way the change feed will pickup the document update and alter the managed views.
             if (task.status.Equals("complete"))
             {
-                //Set the ttl to two weeks. (60 seconds * 60 minutes * 24 hours * 7 days in a week * 2 weeks)
-                task.ttl = 60 * 60 * 24 * 7 * 2;
+                //Set the ttl to 5 minutes. (60 seconds * 5 minutes)
+                task.ttl = 60 * 5;
             }
 
             //Upsert the document in cosmos and return the task id.

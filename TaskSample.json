@@ -1,4 +1,7 @@
-{"type": "vacation",
+{
+    "summary": "Vacation request for 4 days",
+    "detail": "Detail data",
+    "type": "vacation",
     "submittedby": "howard",
     "approvers": [{
         "id": "sam",
