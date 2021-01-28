@@ -43,7 +43,7 @@ namespace Demo.Task
             try
             {
                 //Query for the document an Object so we don't need to have a model class defined.
-                ItemResponse<Object> response = await _taskContainer.ReadItemAsync<Object>(id: id, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(id));
+                ItemResponse<Object> response = await _taskContainer.ReadItemAsync<Object>(id: id, partitionKey: new PartitionKey(id));
                 log.LogInformation($"Retrieved task {id} with RU charge {response.RequestCharge}");
 
                 //Convert the document to json, which is located in the Resource parameter and needs to be a string

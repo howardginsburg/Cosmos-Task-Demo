@@ -56,7 +56,7 @@ namespace Demo.TaskDemo
                     //Convert the document into a dynamic object so we can work with it without binding to a model.
                     dynamic task = JsonConvert.DeserializeObject<ExpandoObject>(document.ToString(), new ExpandoObjectConverter());
 
-                    //Get the TaskItemView for this approver.
+                    //Get the TaskItemView for this submitter.
                     dynamic taskOwnerView = await getTaskView(task.submittedby, log);
                     handleTaskApprovals(task, taskOwnerView, log);
                     saveTaskView(taskOwnerView, log);
@@ -163,7 +163,7 @@ namespace Demo.TaskDemo
 
 
                 foreach(dynamic taskElement in taskList){
-                    if (task.id == task.id)
+                    if (taskElement.id == task.id)
                     {
                         taskToRemove = taskElement;
                         break;

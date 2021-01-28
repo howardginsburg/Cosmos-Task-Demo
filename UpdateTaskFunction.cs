@@ -58,7 +58,7 @@ namespace Demo.Task
             }
 
             //Upsert the document in cosmos and return the task id.
-            var result = await _taskContainer.UpsertItemAsync<Object>(item: task, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(task.id));
+            var result = await _taskContainer.UpsertItemAsync<Object>(item: task, partitionKey: new PartitionKey(task.id));
             log.LogInformation($"Upserted task {task.id} with RU charge {result.RequestCharge}");
             return new OkObjectResult(task.id);
         }
