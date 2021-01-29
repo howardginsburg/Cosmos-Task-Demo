@@ -113,7 +113,7 @@ A powerful feature of Cosmos DB is the [Change Feed](https://docs.microsoft.com/
 One of our requirements is to delete Tasks when they are completed.  Since we are managing the TaskViews materialized views through Change Feed, this creates a challenge.  Currently in Cosmos DB, documents that are deleted do not show up in the Change Feed for processing.  The pattern to address this is to specify a [Time to Live (TTL)](https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-time-to-live) on the document.  By not explicitly deleting the Task document when it is set to complete, it will show up in the Change Feed and allow us to remove the task from the materialized views.  When the Time to Live expires, Cosmos DB will delete the document for us.
 
 ### Azure Function Bindings and Dependency Injection
-Azure Functions supports Cosmos DB bindings which simplify the dependency injection pattern and enable us quickly query and update documents.  The challenge is that the bindings are based on the Cosmos DB v2 SDK.  Azure Functions does support a more traditional [dependency injection pattern](https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection) and we leverage that here to stay with the Cosmos DB v3 SDK.
+Azure Functions supports Cosmos DB bindings which simplify the dependency injection pattern and enable us to quickly query and update documents.  The challenge is that the bindings are currently dependent on the Cosmos DB v2 SDK.  Azure Functions does support a more traditional [dependency injection pattern](https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection) and we leverage that here to stay with the Cosmos DB v3 SDK.
 
 ## Architecture Diagram
 
@@ -138,3 +138,10 @@ Todo
 3. Run http://localhost:7071/api/GetTaskView/howard to see the materialized view for Howard.
 4. Run http://localhost:7071/api/GetTaskView/sam to see the materialized view for Howard.
 5. Using the response from Step 2, change the 'status' from 'pending' to 'complete', and run http://localhost:7071/api/UpdateTask.  Using the Data Explorer in Cosmos, you will see your updated task in the TaskItem collection with a new 'ttl' attribute set to 300 seconds.  The TaskViews collection will have no documents.  This is because our code deletes materialized views that have no tasks open or to be approved for the user.
+
+### Deploying to Azure
+Note, if you plan to test locally and run in Azure at the same time, you must either use a separate lease collection for the Change Feed or specify a lease prefix so that both instances of the function will process the change feed.  The [Cosmos DB Trigger](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2-trigger?tabs=csharp#configuration) goes into more detail.
+1. Provision and configure a Cosmos DB account as described in the 'Running the Demo' section above.
+2. Provision an Azure Function App.
+3. Create the 'CosmosDBConnection' app setting in the Function App and set it to your Cosmos DB connection string.
+4. Deploy the Task Demo sample to the Function App.
