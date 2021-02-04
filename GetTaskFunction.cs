@@ -13,12 +13,16 @@ namespace Demo.Task
 
     /**
         GetTask function.
+        
     */
     public class GetTaskFunction
     {
-        
+               
         private CosmosClient _cosmosClient;
         private Container _taskContainer;
+        
+        //CosmosNote - In order to easily get the CosmosClient to read and update TaskViews, we use dependency injection.  This is different from V2 where we can use
+        //the Cosmos function binding. 
         public GetTaskFunction(CosmosClient cosmosClient)
         {
             //Get the cosmos client object that our Startup.cs creates through dependency injection.
@@ -38,6 +42,7 @@ namespace Demo.Task
             string id,
             ILogger log)
         {
+            //CosmosNote - we must retieve the document through code.  This is fairly simple, but not as elegant as the function binding in V2.
             //Use dynamic so we don't need to have a model object.
             dynamic task = null;
             try

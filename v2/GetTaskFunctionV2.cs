@@ -18,6 +18,7 @@ namespace Demo.Task.V2
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTaskV2/{id}")] 
             HttpRequest req,
+            //CosmosNote - For V2 SDK, we can use function bindings to retrieve the document thus making the code in the function very simple.
             [CosmosDB("Tasks", 
                       "TaskItem", 
                       ConnectionStringSetting="CosmosDbConnection", 

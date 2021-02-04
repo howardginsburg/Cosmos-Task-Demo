@@ -20,6 +20,9 @@ namespace Demo.Task
     {
         private CosmosClient _cosmosClient;
         private Container _taskContainer;
+
+        //CosmosNote - In order to easily get the CosmosClient to read and update Tasks, we use dependency injection.  This is different from V2 where we can use
+        //the Cosmos function binding.
         public UpdateTaskFunction(CosmosClient cosmosClient)
         {
              //Get the cosmos client object that our Startup.cs creates through dependency injection.
@@ -57,7 +60,7 @@ namespace Demo.Task
                 task.ttl = 60 * 5;
             }
 
-            //Upsert the document in cosmos and return the task id.
+            //CosmosNote - Upsert the document in cosmos and return the task id.  This is different from V2 where we use a Document output binding to handle it for us.
             var result = await _taskContainer.UpsertItemAsync<Object>(item: task, partitionKey: new PartitionKey(task.id));
             log.LogInformation($"Upserted task {task.id} with RU charge {result.RequestCharge}");
             return new OkObjectResult(task.id);

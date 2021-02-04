@@ -16,27 +16,26 @@ namespace Demo.TaskDemo.V2
     */
     public class TaskUpdateChangeFeedFunctionV2
     { 
-        private IDocumentClient _cosmosClient;
-       
-        public TaskUpdateChangeFeedFunctionV2(IDocumentClient cosmosClient)
-        {
-            //Get the cosmos client object that our Startup.cs creates through dependency injection.
-            _cosmosClient = cosmosClient;
-
-        } 
-        
+               
         /**
             TaskUpdateChangeFeed function.
 
             This function is a Cosmos ChangeFeed trigger
+            CosmosNote - In order to use the ChangeFeed trigger, we must use V2 SDK. 
         */
-        [FunctionName("TaskUpdateChangeFeed")]
+        [FunctionName("TaskUpdateChangeFeedFunctionV2")]
         public async void Run([CosmosDBTrigger(
             databaseName: "Tasks",
             collectionName: "TaskItem",
             ConnectionStringSetting = "CosmosDBConnection",
             LeaseCollectionName = "leases",
-            CreateLeaseCollectionIfNotExists = true)] IReadOnlyList<Document> input, 
+            CreateLeaseCollectionIfNotExists = true)] IReadOnlyList<Document> input,
+            //CosmosNote - For V2 SDK, we can use the cosmos binding to get a handle to the DocumentClient object.  This is different than
+            //V3 SDK where we use dependency injection to get the handle and abstract it from the function.
+            [CosmosDB(
+                databaseName: "Tasks",
+                collectionName: "TaskViews",
+                ConnectionStringSetting = "CosmosDBConnection")] DocumentClient _cosmosClient,
             ExecutionContext context, 
             ILogger log)
         {
@@ -51,17 +50,17 @@ namespace Demo.TaskDemo.V2
                     dynamic task = JsonConvert.DeserializeObject<ExpandoObject>(document.ToString(), new ExpandoObjectConverter());
 
                     //Get the TaskItemView for this submitter.
-                    dynamic taskOwnerView = await getTaskView(task.submittedby, log);
+                    dynamic taskOwnerView = await getTaskView(task.submittedby, _cosmosClient, log);
                     handleTaskApprovals(task, taskOwnerView, log);
-                    saveTaskView(taskOwnerView, log);
+                    saveTaskView(taskOwnerView, _cosmosClient, log);
                     
                     //Loop through all the approvers in the document.
                     foreach(dynamic approver in task.approvers)
                     {
                         //Get the TaskItemView for this approver.
-                        dynamic taskApproverView = await getTaskView(approver.id, log);
+                        dynamic taskApproverView = await getTaskView(approver.id, _cosmosClient, log);
                         handleTaskApprovals(task, taskApproverView, log);
-                        saveTaskView(taskApproverView, log);
+                        saveTaskView(taskApproverView, _cosmosClient, log);
                     }
                     
                 }
@@ -70,11 +69,12 @@ namespace Demo.TaskDemo.V2
         }
 
 
-        private async System.Threading.Tasks.Task<dynamic> getTaskView(dynamic id, ILogger log)
+        private async System.Threading.Tasks.Task<dynamic> getTaskView(dynamic id, DocumentClient _cosmosClient, ILogger log)
         {
             dynamic taskView = null;
             try{
-                //Using the Comsos V2 SDK, read the TaskItemView as an Document type.  This allows us to not have to have a model class before turning it into a dynamic object.
+                //CosmosNote - Using the Comsos V2 SDK, read the TaskItemView as a Document type.  
+                //This allows us to not have to have a model class before turning it into a dynamic object.
                 RequestOptions options = new RequestOptions();
                 options.PartitionKey = new PartitionKey(id);
 
@@ -101,20 +101,23 @@ namespace Demo.TaskDemo.V2
             return taskView;
         }
 
-        private async void saveTaskView(dynamic taskView, ILogger log)
+        private async void saveTaskView(dynamic taskView, DocumentClient _cosmosClient, ILogger log)
         {
-            //Using the Cosmos V2 SDK, if they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
+            //If they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
             if ((taskView.mytasks.Count > 0) || (taskView.approvaltasks.Count > 0))
             {
+                //CosmosNote - to upsert a document in V2, we must build the URI for the document.  V3 handles this differently requiring the document and the partition.
                 Uri uri = UriFactory.CreateDocumentCollectionUri("Tasks","TaskViews");
                 var result = await _cosmosClient.UpsertDocumentAsync(uri, taskView);
                 log.LogInformation($"Upserted TaskItemView for  {taskView.id} with RU charge {result.RequestCharge}");
             }
             else
             {
+                //CosmosNote - to delete a document in V2, we need the URI of the document.  V3 handles this differently requiring the document id and partition key.
                 RequestOptions options = new RequestOptions();
                 options.PartitionKey = new PartitionKey(taskView.id);
-                var result = await _cosmosClient.DeleteDocumentAsync($"dbs/Tasks/colls/TaskViews/docs/{taskView.id}",options);
+                Uri uri = UriFactory.CreateDocumentUri("Tasks","TaskViews",taskView.id);
+                var result = await _cosmosClient.DeleteDocumentAsync(uri,options);
                 log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
             }
         }

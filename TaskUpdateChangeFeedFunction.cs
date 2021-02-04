@@ -15,12 +15,16 @@ namespace Demo.TaskDemo
 {
     /**
         TaskUpdateChangeFeed function that manages the task view for approvers.  As tasks change, the Cosmos changefeed will fire.
+        CosmosNote - In order to use the ChangeFeed trigger, we must use V2 SDK. 
     */
     public class TaskUpdateChangeFeedFunction
-    {  
+    {
+
         
         private CosmosClient _cosmosClient;
         private Container _taskViewsContainer;
+        //CosmosNote - In order to easily get the CosmosClient to read and update TaskViews, we use dependency injection.  This is different from V2 where we can use
+        //the Cosmos function binding. 
         public TaskUpdateChangeFeedFunction(CosmosClient cosmosClient)
         {
             //Get the cosmos client object that our Startup.cs creates through dependency injection.
@@ -36,7 +40,7 @@ namespace Demo.TaskDemo
             This function is a Cosmos ChangeFeed trigger.  Cosmos bindings leverage the V2 SDK.  In our code we want to stick with
             the V3 SDK, so there is a blend here.
         */
-        [FunctionName("TaskUpdateChangeFeed")]
+        [FunctionName("TaskUpdateChangeFeedFunction")]
         public async void Run([CosmosDBTrigger(
             databaseName: "Tasks",
             collectionName: "TaskItem",
@@ -80,7 +84,8 @@ namespace Demo.TaskDemo
         {
             dynamic taskView = null;
             try{
-                //Using the Comsos V3 SDK, read the TaskItemView as an Object type.  This allows us to not have to have a model class before turning it into a dynamic object.
+                //CosmosNote - Using the Cosmos V3 SDK, read the TaskItemView as an Object type.
+                //This allows us to not have to have a model class before turning it into a dynamic object.
                 ItemResponse<Object> document = await _taskViewsContainer.ReadItemAsync<Object>(id: id, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(id));
                 taskView = JsonConvert.DeserializeObject<ExpandoObject>(document.Resource.ToString(), new ExpandoObjectConverter());
             }
@@ -105,14 +110,17 @@ namespace Demo.TaskDemo
 
         private async void saveTaskView(dynamic taskView, ILogger log)
         {
-            //Using the Cosmos V3 SDK, if they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
+            //If they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
             if ((taskView.mytasks.Count > 0) || (taskView.approvaltasks.Count > 0))
-            {                    
+            {
+                //CosmosNote - to upsert a document in V3, we need the object and the partition key.  V2 handles this differently requiring the URI for the document.                    
                 var result = await _taskViewsContainer.UpsertItemAsync<Object>(item: taskView, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id));
                 log.LogInformation($"Upserted TaskItemView for  {taskView.id} with RU charge {result.RequestCharge}");
             }
             else
             {
+                //CosmosNote - to delete the document in V3, we need the document id and partition key.  V2 handles this differently requiring the URI for the document and
+                //partition key.
                 var result = await _taskViewsContainer.DeleteItemAsync<Object>(taskView.id, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id));
                 log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
             }

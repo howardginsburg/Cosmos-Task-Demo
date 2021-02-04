@@ -10,7 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Demo.Task
 {
     /**
-        Dependency injection startup class that our Functions will take advantage of to get a Cosmos Client object.
+        CosmosNote - Since Function bindings leverage the Cosmos V2 SDK, we take advantage of dependency injection to be able to get a handle to the
+        V3 CosmosClient object.  Our V2 example does not use this at all.
     */
     public class Startup : FunctionsStartup
     {

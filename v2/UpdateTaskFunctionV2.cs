@@ -24,6 +24,7 @@ namespace Demo.Task.V2
         public static IActionResult Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
             HttpRequest req,
+            //CosmosNote - we can use a document output binding to handle the write back to cosmos, thus minimizing the cosmos specific code.
             [CosmosDB(
                 databaseName: "Tasks",
                 collectionName: "TaskItem",
@@ -31,7 +32,7 @@ namespace Demo.Task.V2
             ILogger log)
         {
             //Get the json from the payload and turn it into an ExpandoObject so we don't need a model class.  We could convert this directly to the Cosmos Document class,
-            //but this tries to show the similarities 
+            //but we're trying to have the code bases as close to the same as possible.
             string requestBody = new StreamReader(req.Body).ReadToEnd();
             dynamic task = JsonConvert.DeserializeObject<ExpandoObject>(requestBody);
 
@@ -47,11 +48,11 @@ namespace Demo.Task.V2
                 task.ttl = 60 * 5;
             }
 
-            //Conert from our ExpandoObject to the Document so the binding picks it up and saves it.  As noted above, we could have just deserialized directly to the Document
-            //and used the Get
+            //CosmosNote - Convert from our ExpandoObject to the Document so the binding picks it up and saves it.  As noted above, we could 
+            //have just deserialized directly to the Document and used the Get/SetProperty methods so we didn't have to convert.
             document = JsonConvert.DeserializeObject<Document>(JsonConvert.SerializeObject(task));
             
-            //Upsert the document in cosmos and return the task id.
+            //Return the task id.  The document will get upserted for us when the function returns.
             return new OkObjectResult(task.id);
         }
     }
