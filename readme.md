@@ -1,5 +1,5 @@
 # Overview
-This demo is setup to show how to leverage Azure Functions with the Azure Cosmos DB v3 SDK to demonstrate creating and managing documents using a serverless pattern as well as how to leverage materialized views for speed and performance in the Cosmos DB platform.
+This demo is setup to show how to leverage Azure Functions with the Azure Cosmos DB v3 SDK to demonstrate creating and managing documents using a serverless pattern as well as how to leverage materialized views for speed and performance in the Cosmos DB platform.  There is also a [v2 SDK version](/v2) that illustrates the differences
 
 # Scenario Summary
 
