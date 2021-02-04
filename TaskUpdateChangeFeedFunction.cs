@@ -40,7 +40,7 @@ namespace Demo.TaskDemo
             This function is a Cosmos ChangeFeed trigger.  Cosmos bindings leverage the V2 SDK.  In our code we want to stick with
             the V3 SDK, so there is a blend here.
         */
-        [FunctionName("TaskUpdateChangeFeedFunction")]
+        [FunctionName("TaskUpdateChangeFeed")]
         public async void Run([CosmosDBTrigger(
             databaseName: "Tasks",
             collectionName: "TaskItem",

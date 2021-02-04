@@ -14,7 +14,7 @@ namespace Demo.Task.V2
     */
     public static class GetTaskFunctionV2
     {
-        [FunctionName("GetTaskFunctionV2")]
+        [FunctionName("GetTaskV2")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTaskV2/{id}")] 
             HttpRequest req,

@@ -16,7 +16,7 @@ namespace Demo.Task.V2
         /**
             GetTaskView function.
         */
-        [FunctionName("GetTaskViewFunctionV2")]
+        [FunctionName("GetTaskViewV2")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTaskViewV2/{id}")] 
             HttpRequest req,

@@ -23,7 +23,7 @@ namespace Demo.TaskDemo.V2
             This function is a Cosmos ChangeFeed trigger
             CosmosNote - In order to use the ChangeFeed trigger, we must use V2 SDK. 
         */
-        [FunctionName("TaskUpdateChangeFeedFunctionV2")]
+        [FunctionName("TaskUpdateChangeFeedV2")]
         public async void Run([CosmosDBTrigger(
             databaseName: "Tasks",
             collectionName: "TaskItem",

@@ -35,7 +35,7 @@ namespace Demo.Task
         /**
             Function to retrieve a task by task id.
         */
-        [FunctionName("GetTask")]
+        [FunctionName("GetTaskFunction")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTask/{id}")] 
             HttpRequest req,  
