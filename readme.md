@@ -113,7 +113,7 @@ A powerful feature of Cosmos DB is the [Change Feed](https://docs.microsoft.com/
 One of our requirements is to delete Tasks when they are completed.  Since we are managing the TaskViews materialized views through Change Feed, this creates a challenge.  Currently in Cosmos DB, documents that are deleted do not show up in the Change Feed for processing.  The pattern to address this is to specify a [Time to Live (TTL)](https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-time-to-live) on the document.  By not explicitly deleting the Task document when it is set to complete, it will show up in the Change Feed and allow us to remove the task from the materialized views.  When the Time to Live expires, Cosmos DB will delete the document for us.
 
 ### Azure Function Bindings and Dependency Injection
-Azure Functions v3 supports [Cosmos DB bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2) which simplify the dependency injection pattern and enable us to quickly query and update documents.  The challenge is that the bindings are currently dependent on the Cosmos DB v2 SDK.  Azure Functions does support the traditional [dependency injection pattern](https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection) and we leverage that in [StartUp.cs](Startup.cs) to simplify the usage of the Cosmos DB v3 SDK.  Included is a [Cosmos DB v2 SDK sample](/v2) for comparison. 
+Azure Functions v3 supports [Cosmos DB bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2) which simplify the dependency injection pattern and enable us to quickly query and update documents.  The challenge is that the bindings are currently dependent on the Cosmos DB v2 SDK.  Azure Functions does support the traditional [dependency injection pattern](https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection) and we leverage that in [StartUp.cs](/v3/Startup.cs) to simplify the usage of the Cosmos DB v3 SDK.  Included is a [Cosmos DB v2 SDK sample](/v2) for comparison. 
 
 ## Architecture Diagram
 
@@ -132,7 +132,7 @@ Included in this codebase are Azure Functions v3 that leverage the Cosmos DB v3 
 7. Create a TaskItem collection with 'id' as the partition and database shared units.
 8. Specify Time to Live as On(no default) on the TaskItem collection.
 9. Create a TaskViews collection with 'id' as the partition and database shared units.
-10. Rename sample.settings.json to local.settings.json and add replace 'CosmosDBConnection' with you Cosmos account connection string.  If you intend to run the v2 sample, change the line item for which TaskUpdateChangeFeed function is disabled.
+10. Rename sample.settings.json to local.settings.json and place it in the directory of the version you want to run (ie v2 or v3 folder) add replace 'CosmosDBConnection' with you Cosmos account connection string.
 11.  Run the project.  The local Functions runtime will run and give you the urls for your functions.
 
 ### Test Flow
