@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 
-namespace Demo.TaskDemo
+namespace Demo.TaskDemo.V3
 {
     /**
         TaskUpdateChangeFeed function that manages the task view for approvers.  As tasks change, the Cosmos changefeed will fire.
@@ -40,7 +40,7 @@ namespace Demo.TaskDemo
             This function is a Cosmos ChangeFeed trigger.  Cosmos bindings leverage the V2 SDK.  In our code we want to stick with
             the V3 SDK, so there is a blend here.
         */
-        [FunctionName("TaskUpdateChangeFeed")]
+        [FunctionName("TaskUpdateChangeFeedV3")]
         public async void Run([CosmosDBTrigger(
             databaseName: "Tasks",
             collectionName: "TaskItem",
@@ -63,7 +63,7 @@ namespace Demo.TaskDemo
                     //Get the TaskItemView for this submitter.
                     dynamic taskOwnerView = await getTaskView(task.submittedby, log);
                     handleTaskApprovals(task, taskOwnerView, log);
-                    saveTaskView(taskOwnerView, log);
+                    await saveTaskView(taskOwnerView, log);
                     
                     //Loop through all the approvers in the document.
                     foreach(dynamic approver in task.approvers)
@@ -71,7 +71,7 @@ namespace Demo.TaskDemo
                         //Get the TaskItemView for this approver.
                         dynamic taskApproverView = await getTaskView(approver.id, log);
                         handleTaskApprovals(task, taskApproverView, log);
-                        saveTaskView(taskApproverView, log);
+                        await saveTaskView(taskApproverView, log);
                     }
                     
                 }
@@ -108,7 +108,7 @@ namespace Demo.TaskDemo
             return taskView;
         }
 
-        private async void saveTaskView(dynamic taskView, ILogger log)
+        private async System.Threading.Tasks.Task saveTaskView(dynamic taskView, ILogger log)
         {
             //If they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
             if ((taskView.mytasks.Count > 0) || (taskView.approvaltasks.Count > 0))

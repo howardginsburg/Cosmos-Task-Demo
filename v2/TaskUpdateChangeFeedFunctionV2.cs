@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.Dynamic;
 using System.Collections.Generic;
 using Microsoft.Azure.WebJobs;
@@ -7,7 +9,7 @@ using Microsoft.Azure.Documents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Microsoft.Azure.Documents.Client;
-using System;
+
 
 namespace Demo.TaskDemo.V2
 {
@@ -52,7 +54,7 @@ namespace Demo.TaskDemo.V2
                     //Get the TaskItemView for this submitter.
                     dynamic taskOwnerView = await getTaskView(task.submittedby, _cosmosClient, log);
                     handleTaskApprovals(task, taskOwnerView, log);
-                    saveTaskView(taskOwnerView, _cosmosClient, log);
+                    await saveTaskView(taskOwnerView, _cosmosClient, log);
                     
                     //Loop through all the approvers in the document.
                     foreach(dynamic approver in task.approvers)
@@ -60,7 +62,7 @@ namespace Demo.TaskDemo.V2
                         //Get the TaskItemView for this approver.
                         dynamic taskApproverView = await getTaskView(approver.id, _cosmosClient, log);
                         handleTaskApprovals(task, taskApproverView, log);
-                        saveTaskView(taskApproverView, _cosmosClient, log);
+                        await saveTaskView(taskApproverView, _cosmosClient, log);
                     }
                     
                 }
@@ -69,7 +71,7 @@ namespace Demo.TaskDemo.V2
         }
 
 
-        private async System.Threading.Tasks.Task<dynamic> getTaskView(dynamic id, DocumentClient _cosmosClient, ILogger log)
+        private async Task<dynamic> getTaskView(dynamic id, DocumentClient _cosmosClient, ILogger log)
         {
             dynamic taskView = null;
             try{
@@ -101,7 +103,7 @@ namespace Demo.TaskDemo.V2
             return taskView;
         }
 
-        private async void saveTaskView(dynamic taskView, DocumentClient _cosmosClient, ILogger log)
+        private async System.Threading.Tasks.Task saveTaskView(dynamic taskView, DocumentClient _cosmosClient, ILogger log)
         {
             //If they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
             if ((taskView.mytasks.Count > 0) || (taskView.approvaltasks.Count > 0))

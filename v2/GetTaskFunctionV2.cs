@@ -24,12 +24,12 @@ namespace Demo.Task.V2
                       ConnectionStringSetting="CosmosDbConnection", 
                       Id="{id}",
                       PartitionKey="{id}")]
-            Document customerDocument,
+            Document document,
             ILogger log)
         {
             //The binding does the lookup for us, minimizing the code.
-            if(customerDocument == null) return new NotFoundResult();
-            return new JsonResult(customerDocument);
+            if(document == null) return new NotFoundResult();
+            return new JsonResult(document);
         }
     }
 }
