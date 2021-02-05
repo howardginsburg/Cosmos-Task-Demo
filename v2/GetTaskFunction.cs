@@ -6,17 +6,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Documents;
 
-namespace Demo.Task.V2
+namespace Demo.Task
 {
 
     /**
         GetTask function.
     */
-    public static class GetTaskFunctionV2
+    public static class GetTaskFunction
     {
-        [FunctionName("GetTaskV2")]
+        [FunctionName("GetTask")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTaskV2/{id}")] 
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTask/{id}")] 
             HttpRequest req,
             //CosmosNote - For V2 SDK, we can use function bindings to retrieve the document thus making the code in the function very simple.
             [CosmosDB("Tasks", 

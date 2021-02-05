@@ -10,17 +10,17 @@ using Microsoft.Azure.Documents;
 using System.Dynamic;
 using System.Collections.Generic;
 
-namespace Demo.Task.V2
+namespace Demo.Task
 {
     /**
         UpdateTask function.
     */
-    public static class UpdateTaskFunctionV2
+    public static class UpdateTaskFunction
     {
         /**
             UpdateTask function.
         */
-        [FunctionName("UpdateTaskV2")]
+        [FunctionName("UpdateTask")]
         public static IActionResult Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
             HttpRequest req,

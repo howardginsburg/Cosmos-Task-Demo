@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 
-namespace Demo.Task.V3
+namespace Demo.Task
 {
     /**
         GetTaskView function.
@@ -29,7 +29,7 @@ namespace Demo.Task.V3
             _taskViewContainer = _cosmosClient.GetContainer("Tasks","TaskViews");
         }
 
-        [FunctionName("GetTaskViewV3")]
+        [FunctionName("GetTaskView")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTaskView/{id}")] 
             HttpRequest req, 

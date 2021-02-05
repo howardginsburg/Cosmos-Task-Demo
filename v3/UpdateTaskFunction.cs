@@ -11,7 +11,7 @@ using System.Dynamic;
 using System.Collections.Generic;
 using Microsoft.Azure.Cosmos;
 
-namespace Demo.Task.V3
+namespace Demo.Task
 {
     /**
         UpdateTask function.
@@ -36,7 +36,7 @@ namespace Demo.Task.V3
          /**
             UpdateTask function.
         */
-        [FunctionName("UpdateTaskV3")]
+        [FunctionName("UpdateTask")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
             HttpRequest req,

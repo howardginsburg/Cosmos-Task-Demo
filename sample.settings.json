@@ -4,9 +4,5 @@
       "AzureWebJobsStorage": "UseDevelopmentStorage=true",
       "FUNCTIONS_WORKER_RUNTIME": "dotnet",
       "CosmosDBConnection": "Super Secret Cosmos Account Connection String",
-      "AzureWebJobs.GetTaskV2.Disabled": "true",
-      "AzureWebJobs.GetTaskViewV2.Disabled": "true",
-      "AzureWebJobs.UpdateTaskV2.Disabled": "true",
-      "AzureWebJobs.TaskUpdateChangeFeedV2.Disabled": "true"
     }
   }

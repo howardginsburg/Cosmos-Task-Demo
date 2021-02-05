@@ -11,12 +11,12 @@ using Newtonsoft.Json.Converters;
 using Microsoft.Azure.Documents.Client;
 
 
-namespace Demo.TaskDemo.V2
+namespace Demo.TaskDemo
 {
     /**
         TaskUpdateChangeFeed function that manages the task view for approvers.  As tasks change, the Cosmos changefeed will fire.
     */
-    public class TaskUpdateChangeFeedFunctionV2
+    public class TaskUpdateChangeFeedFunction
     { 
                
         /**
@@ -25,7 +25,7 @@ namespace Demo.TaskDemo.V2
             This function is a Cosmos ChangeFeed trigger
             CosmosNote - In order to use the ChangeFeed trigger, we must use V2 SDK. 
         */
-        [FunctionName("TaskUpdateChangeFeedV2")]
+        [FunctionName("TaskUpdateChangeFeed")]
         public async void Run([CosmosDBTrigger(
             databaseName: "Tasks",
             collectionName: "TaskItem",

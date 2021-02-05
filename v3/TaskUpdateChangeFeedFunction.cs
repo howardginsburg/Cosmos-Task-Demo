@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 
-namespace Demo.TaskDemo.V3
+namespace Demo.TaskDemo
 {
     /**
         TaskUpdateChangeFeed function that manages the task view for approvers.  As tasks change, the Cosmos changefeed will fire.
@@ -40,7 +40,7 @@ namespace Demo.TaskDemo.V3
             This function is a Cosmos ChangeFeed trigger.  Cosmos bindings leverage the V2 SDK.  In our code we want to stick with
             the V3 SDK, so there is a blend here.
         */
-        [FunctionName("TaskUpdateChangeFeedV3")]
+        [FunctionName("TaskUpdateChangeFeed")]
         public async void Run([CosmosDBTrigger(
             databaseName: "Tasks",
             collectionName: "TaskItem",

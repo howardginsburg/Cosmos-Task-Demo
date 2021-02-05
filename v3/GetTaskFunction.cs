@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 
-namespace Demo.Task.V3
+namespace Demo.Task
 {
 
     /**
@@ -35,7 +35,7 @@ namespace Demo.Task.V3
         /**
             Function to retrieve a task by task id.
         */
-        [FunctionName("GetTaskV3")]
+        [FunctionName("GetTask")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetTask/{id}")] 
             HttpRequest req,  

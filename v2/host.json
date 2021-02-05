@@ -6,11 +6,6 @@
             "samplingSettings": {
                 "isEnabled": true
             }
-        },
-        "logLevel": {
-            "default": "Trace",
-            "Host.Triggers.CosmosDB": "Trace",
-            "Host.Triggers.Http": "Trace"
         }
     }
-}
+} 
