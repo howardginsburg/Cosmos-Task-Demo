@@ -1,5 +1,5 @@
 # Overview
-This demo is setup to show how to leverage Azure Functions v3 SDK with the Azure Cosmos DB v3 SDK to demonstrate creating and managing documents using a serverless pattern as well as how to leverage materialized views for speed and performance in the Cosmos DB platform.  There is also an Azure Functions v3 SDK with [Cosmos v2 SDK sample](/v2) that illustrates the differences.
+This demo is setup to show how to leverage Azure Functions v3 SDK with the Azure Cosmos DB to demonstrate creating and managing documents using a serverless pattern as well as how to leverage [materialized views](https://docs.microsoft.com/en-us/azure/architecture/patterns/materialized-view) for speed and performance in the Cosmos DB platform.  The repo has samples written using [Cosmos v3 SDK](/v3) and [Cosmos v2 SDK](/v2) that illustrates the differences.
 
 # Scenario Summary
 
@@ -78,7 +78,7 @@ All Cosmos collections require a partition key to distribute the data.  A few in
 2. submittedby - choosing this option requires us to look at the alignment of users that submit tasks.  This allows us to have single partition reads for the user that submitted the task.  However, approvers will still result in a cross partition query.  Additionally, if we have a couple of users that submit a lot of tasks, and everyone else just submits a few, then it's possible our collection will be unbalanced.
 
 ### TaskItemView
-A solution to eliminating the cross partition query is to introduce a materialized view for each user.  For each user, we'll store a document that contains the list of tasks they've created, and the list of tasks they need to approve.  It must be easy to lookup.  A mockup looks like this.
+A solution to eliminating the cross partition query is to introduce a [materialized view](https://docs.microsoft.com/en-us/azure/architecture/patterns/materialized-view) for each user.  For each user, we'll store a document that contains the list of tasks they've created, and the list of tasks they need to approve.  It must be easy to lookup.  A mockup looks like this.
 ```
 {
     "id": "user id",
@@ -112,15 +112,15 @@ A powerful feature of Cosmos DB is the [Change Feed](https://docs.microsoft.com/
 ### Deleting Tasks
 One of our requirements is to delete Tasks when they are completed.  Since we are managing the TaskViews materialized views through Change Feed, this creates a challenge.  Currently in Cosmos DB, documents that are deleted do not show up in the Change Feed for processing.  The pattern to address this is to specify a [Time to Live (TTL)](https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-time-to-live) on the document.  By not explicitly deleting the Task document when it is set to complete, it will show up in the Change Feed and allow us to remove the task from the materialized views.  When the Time to Live expires, Cosmos DB will delete the document for us.
 
-### Azure Function Bindings and Dependency Injection
-Azure Functions v3 supports [Cosmos DB bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2) which simplify the dependency injection pattern and enable us to quickly query and update documents.  The challenge is that the bindings are currently dependent on the Cosmos DB v2 SDK.  Azure Functions does support the traditional [dependency injection pattern](https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection) and we leverage that in [StartUp.cs](/v3/Startup.cs) to simplify the usage of the Cosmos DB v3 SDK.  Included is a [Cosmos DB v2 SDK sample](/v2) for comparison. 
+### Cosmos v3 SDK and Azure Function Bindings
+Azure Functions v3 supports [Cosmos DB bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2) which simplify the dependency injection pattern and enable us to quickly query and update documents.  The challenge is that the bindings are currently dependent on the Cosmos DB v2 SDK.  Azure Functions does support the traditional [dependency injection pattern](https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-dependency-injection) and we leverage that in [StartUp.cs](/v3/Startup.cs) to simplify the usage of the Cosmos DB v3 SDK. 
 
 ## Architecture Diagram
 
 Todo
 
 ## Comparing Cosmos SDK v3 and Cosmos SDK v2 Usage.
-Included in this codebase are Azure Functions v3 that leverage the Cosmos DB v3 SDK and also Azure Functions v3 that leverage the Cosmos DB v2 SDK and [Cosmos Function Bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2).  The file names for the v2 SDK are included in the [v2](/v2) folder and the files have the same names as the v3 functions + V2 at the end of them for ease of discovery and comparison.  You can also search for CosmosNote to find comments specific to calling out something about the particular SDK version being used.
+Included in this codebase are Azure Functions v3 that leverage the Cosmos DB v3 SDK and also Azure Functions v3 that leverage the Cosmos DB v2 SDK and [Cosmos Function Bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2).  You can search for 'CosmosNote' to find comments specific to calling out something about the particular SDK version being used.
 
 ## Running the Demo
 1. Visual Studio Code or Visual Studio.
@@ -133,7 +133,8 @@ Included in this codebase are Azure Functions v3 that leverage the Cosmos DB v3 
 8. Specify Time to Live as On(no default) on the TaskItem collection.
 9. Create a TaskViews collection with 'id' as the partition and database shared units.
 10. Rename sample.settings.json to local.settings.json and place it in the directory of the version you want to run (ie v2 or v3 folder) add replace 'CosmosDBConnection' with you Cosmos account connection string.
-11.  Run the project.  The local Functions runtime will run and give you the urls for your functions.
+11. Open the project (.csproj) of the v2 or v3 demo you want to run.
+12.  Run the project.  The local Functions runtime will run and give you the urls for your functions.
 
 ### Test Flow
 1. Run http://localhost:7071/api/UpdateTask passing in the vacation payload task above.  Copy the guid that is returned in the response.  Using the Data Explorer in Cosmos, you will see the task is created in the TaskItem collection, and three materialized views created in the TaskViews collection.
