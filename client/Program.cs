@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Demo.Tasks.Client
@@ -58,8 +59,9 @@ namespace Demo.Tasks.Client
                     }
                 }
 
-                Console.WriteLine($"[4]   Logon/Logoff");
-                Console.WriteLine($"[5]   Exit");
+                Console.WriteLine($"[4]   Sample Data Generator");
+                Console.WriteLine($"[5]   Logon/Logoff");
+                Console.WriteLine($"[6]   Exit");
 
                 ConsoleKeyInfo result = Console.ReadKey(true);
 
@@ -79,9 +81,13 @@ namespace Demo.Tasks.Client
                 }
                 else if (result.KeyChar == '4')
                 {
-                    HandleLogonoff();
+                    await HandleDataGenerator();
                 }
                 else if (result.KeyChar == '5')
+                {
+                    HandleLogonoff();
+                }
+                else if (result.KeyChar == '6')
                 {
                     return;
                 }
@@ -131,7 +137,7 @@ namespace Demo.Tasks.Client
                 dynamic taskApprover = new ExpandoObject();
                 taskApprover.id = approver;
                 //For simplicity of this demo, we're not going to do a lookup for a user name.
-                taskApprover.name = $"{approver} (name value)";
+                taskApprover.name = $"{approver} full name";
                 task.approvers.Add(taskApprover);
             }
             //Save the task.
@@ -183,15 +189,16 @@ namespace Demo.Tasks.Client
                     }
                     count++;
                 }
-                Console.WriteLine($"[B]   Back");
+                Console.WriteLine($"[{count}]   Back");
                 Console.WriteLine("What task would you like to view?");
                 ConsoleKeyInfo key = Console.ReadKey(true);
+                int choice = int.Parse(key.KeyChar.ToString());
                 //If the selected 'Back', then return to the previous screen.
-                if (key.KeyChar.ToString().ToUpper() == "B")
+                if (choice == count)
                 {
                    return;
                 }
-                int choice = int.Parse(key.KeyChar.ToString());
+                
                 
                 //Grab the task guid based on their choice (indexing starts at 0, so subtract 1), and open the task.
                 await HandleViewTask(tasks[choice - 1].id);
@@ -228,13 +235,13 @@ namespace Demo.Tasks.Client
             Console.WriteLine();
             if (task.submittedby != user)
             {
-                Console.WriteLine($"[A]   Mark Complete");
+                Console.WriteLine($"[1]   Mark Complete");
             }
-            Console.WriteLine($"[B]   Back");
+            Console.WriteLine($"[2]   Back");
             
 
             ConsoleKeyInfo result = Console.ReadKey(true);
-            if (result.KeyChar.ToString().ToUpper() == "A")
+            if (result.KeyChar == '1')
             {
                 task.status = "complete";
                 await restHelper.SaveTask(task);
@@ -258,6 +265,73 @@ namespace Demo.Tasks.Client
             {
                 user = null;
             }
+        }
+
+        private async Task HandleDataGenerator()
+        {
+            var random = new Random();
+            string[] users = { "steve", "howard", "tim", "gina", "sarah", "kathy" };
+            string[] taskType = {"vacation","invoice"};
+
+            Console.Clear();
+            Console.WriteLine($"Task Demo - Data Generator");
+            Console.WriteLine($"-----------------------------------------------------------");
+            //If they haven't entered a user id that they want to simulate, prompt them.
+            Console.WriteLine($"How many tasks do you want to create?");
+            int numberOfTasks = int.Parse(Console.ReadLine());
+
+            for (int i = 0; i < numberOfTasks; i++)
+            {
+
+                dynamic task = new ExpandoObject();
+                task.type = taskType[random.Next(0, taskType.Length)];;
+                task.status = "pending";
+                task.submittedby = users[random.Next(0, users.Length)];
+                if (task.type == "vacation") //Vacation
+                {
+                    DateTime currentDate = DateTime.UtcNow.Date;
+                    DateTime startDate = currentDate.AddDays(random.Next(5,180));
+                    DateTime endDate = startDate.AddDays(random.Next(1,10));
+                    task.start = startDate.ToString("yyyy-MM-dd");
+                    task.end = endDate.ToString("yyyy-MM-dd");
+                    task.summary = $"Vacation request from {task.start} to {task.end}";
+                    
+                }
+                else //Invoice
+                {
+                    string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                    task.invoiceid = new string(Enumerable.Repeat(chars, 15).Select(s => s[random.Next(s.Length)]).ToArray());
+                    task.amount = random.Next(1,100000);
+                    task.summary = $"Invoice {task.invoiceid} for {task.amount}";
+                }
+
+                task.detail = $"This was a generated request.";
+
+                task.approvers = new List<ExpandoObject>();
+                int numberOfApprovers = random.Next(1,2);
+                for (int j = 0; j < numberOfApprovers; j++)
+                {
+                    string approver = users[random.Next(0, users.Length)];
+                    while (approver == task.submittedby)
+                    {
+                        approver = users[random.Next(0, users.Length)];
+                    }
+                    
+                    dynamic taskApprover = new ExpandoObject();
+                    taskApprover.id = approver;
+                    //For simplicity of this demo, we're not going to do a lookup for a user name.
+                    taskApprover.name = $"{approver} full name";
+                    task.approvers.Add(taskApprover);
+                }
+                
+                
+                //Save the task.
+                string id = await restHelper.SaveTask(task);
+                Console.WriteLine($"Generated {i + 1} of {numberOfTasks} for user {task.submittedby} - {id}");
+                
+            }
+            Console.WriteLine($"Data generator complete!  Press any key to continue...");
+            Console.ReadKey(true);
         }
     }
 }
