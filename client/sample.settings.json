@@ -1,0 +1,5 @@
+{
+  "GetTask": "http://localhost:7071/api/GetTask/{id}",
+  "UpdateTask": "http://localhost:7071/api/UpdateTask",
+  "GetTaskView": "http://localhost:7071/api/GetTaskView/{id}"
+}
