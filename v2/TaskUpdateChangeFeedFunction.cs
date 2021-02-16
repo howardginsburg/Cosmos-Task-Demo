@@ -116,11 +116,21 @@ namespace Demo.TaskDemo
             else
             {
                 //CosmosNote - to delete a document in V2, we need the URI of the document.  V3 handles this differently requiring the document id and partition key.
-                RequestOptions options = new RequestOptions();
-                options.PartitionKey = new PartitionKey(taskView.id);
-                Uri uri = UriFactory.CreateDocumentUri("Tasks","TaskViews",taskView.id);
-                var result = await _cosmosClient.DeleteDocumentAsync(uri,options);
-                log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
+                try{
+                    RequestOptions options = new RequestOptions();
+                    options.PartitionKey = new PartitionKey(taskView.id);
+                    Uri uri = UriFactory.CreateDocumentUri("Tasks","TaskViews",taskView.id);
+                    var result = await _cosmosClient.DeleteDocumentAsync(uri,options);
+                    log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
+                }
+                catch (DocumentClientException ex)
+                {
+                    //If we don't have a document in Cosmos for this user, a NotFound exception will be thrown and we can create an initial stub to use.
+                    if (!ex.StatusCode.Equals(System.Net.HttpStatusCode.NotFound))
+                    {
+                        throw ex;
+                    }
+                }
             }
         }
 

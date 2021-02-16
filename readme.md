@@ -30,6 +30,7 @@ Since we're building a task management system, the first thing we'll design for 
     "submittedby": "The user id of who created the task",
     "approvers": [{
         "id": "The user ids of the approver",
+        "name": "Name of the approver"
     },
     "status": "The status of the request.  In our case, the task will either be 'pending' or 'complete'" 
 }
@@ -128,20 +129,25 @@ Included in this codebase are Azure Functions v3 that leverage the Cosmos DB v3 
 3. Install and start the [Azure Storage Emulator](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator).
 4. Postman or some other REST client.
 5. Create a Cosmos DB account in Azure that uses the SQL api OR install the [Cosmos DB Emulator](https://docs.microsoft.com/en-us/azure/cosmos-db/local-emulator).
-6. Create a Database named Tasks with 400 request units.
-7. Create a TaskItem collection with 'id' as the partition and database shared units.
+6. Create a Database named Tasks with autoscale set to 4000 request units.  Autoscale will allow you to run the data generator without getting throttled.
+7. Create a TaskItem collection with 'id' as the partition and database shared units.  If you are using Cosmos in Azure, you can enable the Analytical Store to get metrics in Azure Synapse.
 8. Specify Time to Live as On(no default) on the TaskItem collection.
 9. Create a TaskViews collection with 'id' as the partition and database shared units.
 10. Rename sample.settings.json to local.settings.json and place it in the directory of the version you want to run (ie v2 or v3 folder) add replace 'CosmosDBConnection' with you Cosmos account connection string.
 11. Open the project (.csproj) of the v2 or v3 demo you want to run.
 12.  Run the project.  The local Functions runtime will run and give you the urls for your functions.
 
-### Test Flow
+### Test Flow - Option 1
+1. Run the sample console app [project](/client).
+
+### Test Flow - Option 2
 1. Run http://localhost:7071/api/UpdateTask passing in the vacation payload task above.  Copy the guid that is returned in the response.  Using the Data Explorer in Cosmos, you will see the task is created in the TaskItem collection, and three materialized views created in the TaskViews collection.
 2. Run http://localhost:7071/api/GetTask/{replace-with-your-task-guid} to retrieve the Task document from Cosmos.
 3. Run http://localhost:7071/api/GetTaskView/howard to see the materialized view for Howard.
 4. Run http://localhost:7071/api/GetTaskView/sam to see the materialized view for Howard.
 5. Using the response from Step 2, change the 'status' from 'pending' to 'complete', and run http://localhost:7071/api/UpdateTask.  Using the Data Explorer in Cosmos, you will see your updated task in the TaskItem collection with a new 'ttl' attribute set to 300 seconds.  The TaskViews collection will have no documents.  This is because our code deletes materialized views that have no tasks open or to be approved for the user.
+
+
 
 ### Deploying to Azure
 Note, if you plan to test locally and run in Azure at the same time, you must either use a separate lease collection for the Change Feed or specify a lease prefix so that both instances of the function will process the change feed.  The [Cosmos DB Trigger](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-cosmosdb-v2-trigger?tabs=csharp#configuration) goes into more detail.

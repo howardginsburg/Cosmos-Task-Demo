@@ -121,9 +121,19 @@ namespace Demo.TaskDemo
             {
                 //CosmosNote - to delete the document in V3, we need the document id and partition key.  V2 handles this differently requiring the URI for the document and
                 //partition key.
-                var result = await _taskViewsContainer.DeleteItemAsync<Object>(taskView.id, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id));
-                log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
-            }
+                try
+                {
+                    var result = await _taskViewsContainer.DeleteItemAsync<Object>(taskView.id, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id));
+                    log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
+                }
+                catch (CosmosException ex)
+                {
+                    //If we don't have a document in Cosmos for this user, a NotFound exception will be thrown and we can create an initial stub to use.
+                    if (!ex.StatusCode.Equals(System.Net.HttpStatusCode.NotFound))
+                    {
+                        throw ex;
+                    }
+                }
         }
 
         private void handleTaskApprovals(dynamic task, dynamic taskView, ILogger log)

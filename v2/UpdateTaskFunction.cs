@@ -38,8 +38,11 @@ namespace Demo.Task
 
             if (((IDictionary<String, object>)task).ContainsKey("id") == false)
             {
-                 task.id = Guid.NewGuid().ToString();
-                 task.createddate = DateTime.UtcNow.ToString("o");
+                task.id = Guid.NewGuid().ToString();
+                if (((IDictionary<String, object>)task).ContainsKey("createddate") == false)
+                {
+                    task.createddate = DateTime.UtcNow.ToString("o");
+                }
             }
 
             //If the task is complete, use ttl to let it get deleted.  This way the change feed will pickup the document update and alter the managed views.
@@ -47,7 +50,10 @@ namespace Demo.Task
             {
                 //Set the ttl to 5 minutes. (60 seconds * 5 minutes)
                 task.ttl = 60 * 5;
-                task.completeddate = DateTime.UtcNow.ToString("o");
+                if (((IDictionary<String, object>)task).ContainsKey("completeddate") == false)
+                {
+                    task.completeddate = DateTime.UtcNow.ToString("o");
+                }
             }
 
             //CosmosNote - Convert from our ExpandoObject to the Document so the binding picks it up and saves it.  As noted above, we could 

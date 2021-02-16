@@ -63,31 +63,29 @@ namespace Demo.Tasks.Client
                 Console.WriteLine($"[5]   Logon/Logoff");
                 Console.WriteLine($"[6]   Exit");
 
-                ConsoleKeyInfo result = Console.ReadKey(true);
-
-                
+                int selection = int.Parse(Console.ReadLine());                
                
-                if (result.KeyChar == '1')
+                if (selection == 1)
                 {
                     await HandleCreateNewTask();
                 }
-                else if (result.KeyChar == '2')
+                else if (selection == 2)
                 {
                     await HandleViewOpenTasks(true);
                 }
-                else if (result.KeyChar == '3')
+                else if (selection == 3)
                 {
                     await HandleViewOpenTasks(false);
                 }
-                else if (result.KeyChar == '4')
+                else if (selection == 4)
                 {
                     await HandleDataGenerator();
                 }
-                else if (result.KeyChar == '5')
+                else if (selection == 5)
                 {
                     HandleLogonoff();
                 }
-                else if (result.KeyChar == '6')
+                else if (selection == 6)
                 {
                     return;
                 }
@@ -102,7 +100,8 @@ namespace Demo.Tasks.Client
             Console.WriteLine($"What kind of task do you want to create?");
             Console.WriteLine($"[1]   Vacation");
             Console.WriteLine($"[2]   Invoice");
-            ConsoleKeyInfo taskType = Console.ReadKey(true);
+            
+            int selection = int.Parse(Console.ReadLine());  
 
             //Build out the json payload.
             dynamic task = new ExpandoObject();
@@ -112,7 +111,7 @@ namespace Demo.Tasks.Client
             task.summary = Console.ReadLine();
             Console.WriteLine("What is the detail text of the task?");
             task.detail = Console.ReadLine();
-            if (taskType.KeyChar == '1') //Vacation
+            if (selection == 1) //Vacation
             {
                 task.type = "vacation";
                 Console.WriteLine("What is the start date of the vacation (yyyy-mm-dd)?");
@@ -191,17 +190,16 @@ namespace Demo.Tasks.Client
                 }
                 Console.WriteLine($"[{count}]   Back");
                 Console.WriteLine("What task would you like to view?");
-                ConsoleKeyInfo key = Console.ReadKey(true);
-                int choice = int.Parse(key.KeyChar.ToString());
+                int selection = int.Parse(Console.ReadLine());  
                 //If the selected 'Back', then return to the previous screen.
-                if (choice == count)
+                if (selection == count)
                 {
                    return;
                 }
                 
                 
                 //Grab the task guid based on their choice (indexing starts at 0, so subtract 1), and open the task.
-                await HandleViewTask(tasks[choice - 1].id);
+                await HandleViewTask(tasks[selection - 1].id);
             }
         }
 
@@ -240,8 +238,8 @@ namespace Demo.Tasks.Client
             Console.WriteLine($"[2]   Back");
             
 
-            ConsoleKeyInfo result = Console.ReadKey(true);
-            if (result.KeyChar == '1')
+            int selection = int.Parse(Console.ReadLine());  
+            if (selection == 1)
             {
                 task.status = "complete";
                 await restHelper.SaveTask(task);
@@ -272,25 +270,35 @@ namespace Demo.Tasks.Client
             var random = new Random();
             string[] users = { "steve", "howard", "tim", "gina", "sarah", "kathy" };
             string[] taskType = {"vacation","invoice"};
+            string[] status = {"pending","complete"};
 
             Console.Clear();
             Console.WriteLine($"Task Demo - Data Generator");
             Console.WriteLine($"-----------------------------------------------------------");
-            //If they haven't entered a user id that they want to simulate, prompt them.
+            //Get the number of tasks they want to create.
             Console.WriteLine($"How many tasks do you want to create?");
             int numberOfTasks = int.Parse(Console.ReadLine());
 
+            DateTime currentDate = DateTime.UtcNow.Date;
             for (int i = 0; i < numberOfTasks; i++)
             {
-
                 dynamic task = new ExpandoObject();
-                task.type = taskType[random.Next(0, taskType.Length)];;
-                task.status = "pending";
+
+                //Set the created date to sometime in the past year.
+                DateTime createdDate = currentDate.AddDays(random.Next(-365,0));
+                task.createddate = createdDate.ToString("o");
+
+                task.type = taskType[random.Next(0, taskType.Length)];
+
+                //We can create tasks in a 'complete' status for purposes of having the data
+                //in the analytical store in synapse.
+                task.status = status[random.Next(0, status.Length)];
                 task.submittedby = users[random.Next(0, users.Length)];
                 if (task.type == "vacation") //Vacation
                 {
-                    DateTime currentDate = DateTime.UtcNow.Date;
-                    DateTime startDate = currentDate.AddDays(random.Next(5,180));
+                    //Set the start date to sometime after the created date.
+                    DateTime startDate = createdDate.AddDays(random.Next(5,180));
+                    //Set the end date of the vacation request to within 10 days of the start date.
                     DateTime endDate = startDate.AddDays(random.Next(1,10));
                     task.start = startDate.ToString("yyyy-MM-dd");
                     task.end = endDate.ToString("yyyy-MM-dd");
@@ -299,18 +307,23 @@ namespace Demo.Tasks.Client
                 }
                 else //Invoice
                 {
+                    //Generate a random 15 character invoice id.
                     string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
                     task.invoiceid = new string(Enumerable.Repeat(chars, 15).Select(s => s[random.Next(s.Length)]).ToArray());
+                    //Generate a random amount for the invoice between $1 and $100000
                     task.amount = random.Next(1,100000);
                     task.summary = $"Invoice {task.invoiceid} for {task.amount}";
                 }
 
+                //Not worrying about task detail for the generator.
                 task.detail = $"This was a generated request.";
 
+                //Set the approvers to 1 or 2 people.
                 task.approvers = new List<ExpandoObject>();
                 int numberOfApprovers = random.Next(1,2);
                 for (int j = 0; j < numberOfApprovers; j++)
                 {
+                    //Get an approver, making sure we don't select the submitted by user.
                     string approver = users[random.Next(0, users.Length)];
                     while (approver == task.submittedby)
                     {
@@ -322,6 +335,16 @@ namespace Demo.Tasks.Client
                     //For simplicity of this demo, we're not going to do a lookup for a user name.
                     taskApprover.name = $"{approver} full name";
                     task.approvers.Add(taskApprover);
+                }
+
+                if (task.status == "complete")
+                {
+                    //Roll the createdDate forward by up to 60 days.
+                    DateTime completedDate = createdDate.AddDays(random.Next(0,60));
+                    //Add between 1 and 5 hours just in case the completed date is the same date as the created date.
+                    //Otherwise reporting will make it look like it was approved at the same time it was created.
+                    completedDate = completedDate.AddHours(random.Next(1,5));
+                    task.completeddate = completedDate.ToString("o");
                 }
                 
                 
