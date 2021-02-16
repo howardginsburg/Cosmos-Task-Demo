@@ -279,7 +279,7 @@ namespace Demo.Tasks.Client
             Console.WriteLine($"How many tasks do you want to create?");
             int numberOfTasks = int.Parse(Console.ReadLine());
 
-            DateTime currentDate = DateTime.UtcNow.Date;
+            DateTime currentDate = DateTime.UtcNow;
             for (int i = 0; i < numberOfTasks; i++)
             {
                 dynamic task = new ExpandoObject();
