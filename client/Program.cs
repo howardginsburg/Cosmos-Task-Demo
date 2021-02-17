@@ -188,13 +188,37 @@ namespace Demo.Tasks.Client
                     }
                     count++;
                 }
-                Console.WriteLine($"[{count}]   Back");
+                int back = -1;
+                int approveAll = -1;
+                
+                if (!myTasks)
+                {
+                    approveAll = count++;
+                    Console.WriteLine($"[{approveAll}]   Approve All");
+                }
+                back = count;
+                Console.WriteLine($"[{back}]   Back");
+                
                 Console.WriteLine("What task would you like to view?");
                 int selection = int.Parse(Console.ReadLine());  
                 //If the selected 'Back', then return to the previous screen.
-                if (selection == count)
+                if (selection == back)
                 {
                    return;
+                }
+                else if (selection == approveAll) //All
+                {
+                    foreach(dynamic taskElement in tasks){
+                        Console.WriteLine($"Marking task {taskElement.id} complete.");
+                        dynamic task = await restHelper.GetTask(taskElement.id);
+                        task.status = "complete";
+                        await restHelper.SaveTask(task);
+                        
+
+                    }
+                    Console.WriteLine($"Press any key to continue...");
+                    Console.ReadKey();
+                    return;
                 }
                 
                 
