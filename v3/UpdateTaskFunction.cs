@@ -38,7 +38,7 @@ namespace Demo.Task
         */
         [FunctionName("UpdateTask")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
+            [HttpTrigger(AuthorizationLevel.Function, "put", Route = null)]
             HttpRequest req,
             ILogger log)
         {

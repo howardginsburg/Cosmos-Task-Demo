@@ -65,7 +65,7 @@ namespace Demo.Tasks.Client
             string json = JsonConvert.SerializeObject(task, new ExpandoObjectConverter());
             StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage result = await client.PostAsync(UpdateTaskURI,content);
+            HttpResponseMessage result = await client.PutAsync(UpdateTaskURI,content);
             string id = await result.Content.ReadAsStringAsync();
             return id;
         } 

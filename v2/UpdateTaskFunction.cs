@@ -22,7 +22,7 @@ namespace Demo.Task
         */
         [FunctionName("UpdateTask")]
         public static IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
+            [HttpTrigger(AuthorizationLevel.Function, "put", Route = null)]
             HttpRequest req,
             //CosmosNote - we can use a document output binding to handle the write back to cosmos, thus minimizing the cosmos specific code.
             [CosmosDB(
