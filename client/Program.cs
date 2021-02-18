@@ -301,7 +301,7 @@ namespace Demo.Tasks.Client
         private async Task HandleDataGenerator()
         {
             var random = new Random();
-            string[] users = { "steve", "howard", "tim", "gina", "sarah, kathy, lori, artie, sam, david, brian, mike" };
+            string[] users = { "steve", "howard", "tim", "gina", "sarah", "kathy", "lori", "artie", "sam", "david", "brian", "mike" };
             string[] approvers = { "steve", "howard", "tim", "gina", "sarah", "kathy" };
             string[] taskType = {"vacation","invoice"};
             string[] status = {"pending","complete"};
