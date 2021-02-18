@@ -61,19 +61,49 @@ namespace Demo.TaskDemo
                     dynamic task = JsonConvert.DeserializeObject<ExpandoObject>(document.ToString(), new ExpandoObjectConverter());
 
                     //Get the TaskItemView for this submitter.
-                    dynamic taskOwnerView = await getTaskView(task.submittedby, log);
-                    handleTaskApprovals(task, taskOwnerView, log);
-                    await saveTaskView(taskOwnerView, log);
+                    while (true)
+                    {
+                        try
+                        {
+                            dynamic taskOwnerView = await getTaskView(task.submittedby, log);
+                            handleTaskApprovals(task, taskOwnerView, log);
+                            await saveTaskView(taskOwnerView, log);
+                            break;
+                        }
+                        catch (DocumentClientException ex)
+                        {
+                            //If the document etag did not match, retrieve again and try again.
+                            if (!ex.StatusCode.Equals(System.Net.HttpStatusCode.PreconditionFailed))
+                            {
+                                throw ex;
+                            }
+                        }
+                    }
                     
                     //Loop through all the approvers in the document.
                     foreach(dynamic approver in task.approvers)
                     {
-                        //Get the TaskItemView for this approver.
-                        dynamic taskApproverView = await getTaskView(approver.id, log);
-                        handleTaskApprovals(task, taskApproverView, log);
-                        await saveTaskView(taskApproverView, log);
+                        while (true)
+                        {
+                            try
+                            {    
+                                //Get the TaskItemView for this approver.
+
+                                dynamic taskApproverView = await getTaskView(approver.id, log);
+                                handleTaskApprovals(task, taskApproverView, log);
+                                await saveTaskView(taskApproverView, log);
+                                break;
+                            }
+                            catch (DocumentClientException ex)
+                            {
+                                //If the document etag did not match, retrieve again and try again.
+                                if (!ex.StatusCode.Equals(System.Net.HttpStatusCode.PreconditionFailed))
+                                {
+                                    throw ex;
+                                }
+                            }
+                        }
                     }
-                    
                 }
             }
 
@@ -110,11 +140,20 @@ namespace Demo.TaskDemo
 
         private async System.Threading.Tasks.Task saveTaskView(dynamic taskView, ILogger log)
         {
+            ItemRequestOptions options = null;
+            //options.PartitionKey = new PartitionKey(taskView.id);
+
+            //If this is an existing document, it will have an etag.  Lets make sure we don't overwrite the view if
+            //it was updated by a parallel function running.                
+            if (((IDictionary<String, object>)taskView).ContainsKey("_etag"))
+            {
+                options = new ItemRequestOptions { IfMatchEtag = taskView._etag };
+            }
             //If they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
             if ((taskView.mytasks.Count > 0) || (taskView.approvaltasks.Count > 0))
             {
                 //CosmosNote - to upsert a document in V3, we need the object and the partition key.  V2 handles this differently requiring the URI for the document.                    
-                var result = await _taskViewsContainer.UpsertItemAsync<Object>(item: taskView, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id));
+                var result = await _taskViewsContainer.UpsertItemAsync<Object>(item: taskView, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id),requestOptions: options);
                 log.LogInformation($"Upserted TaskItemView for  {taskView.id} with RU charge {result.RequestCharge}");
             }
             else
@@ -123,7 +162,7 @@ namespace Demo.TaskDemo
                 //partition key.
                 try
                 {
-                    var result = await _taskViewsContainer.DeleteItemAsync<Object>(taskView.id, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id));
+                    var result = await _taskViewsContainer.DeleteItemAsync<Object>(taskView.id, partitionKey: new Microsoft.Azure.Cosmos.PartitionKey(taskView.id),requestOptions: options);
                     log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
                 }
                 catch (CosmosException ex)
@@ -134,6 +173,7 @@ namespace Demo.TaskDemo
                         throw ex;
                     }
                 }
+            }
         }
 
         private void handleTaskApprovals(dynamic task, dynamic taskView, ILogger log)
