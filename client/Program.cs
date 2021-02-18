@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Demo.Tasks.Client
@@ -63,7 +64,16 @@ namespace Demo.Tasks.Client
                 Console.WriteLine($"[5]   Logon/Logoff");
                 Console.WriteLine($"[6]   Exit");
 
-                int selection = int.Parse(Console.ReadLine());                
+                int selection = -1;
+                
+                try
+                {
+                    selection = int.Parse(Console.ReadLine());                
+                }
+                catch (Exception ex)
+                {
+
+                }
                
                 if (selection == 1)
                 {
@@ -213,9 +223,8 @@ namespace Demo.Tasks.Client
                         dynamic task = await restHelper.GetTask(taskElement.id);
                         task.status = "complete";
                         await restHelper.SaveTask(task);
-                        
-
                     }
+                    
                     Console.WriteLine($"Press any key to continue...");
                     Console.ReadKey();
                     return;
@@ -344,9 +353,9 @@ namespace Demo.Tasks.Client
 
                 //Set the approvers to 1 or 2 people.
                 task.approvers = new List<ExpandoObject>();
-                int numberOfApprovers = random.Next(1,2);
-                for (int j = 0; j < numberOfApprovers; j++)
-                {
+                //int numberOfApprovers = random.Next(1,2);
+                //for (int j = 0; j < numberOfApprovers; j++)
+                //{
                     //Get an approver, making sure we don't select the submitted by user.
                     string approver = users[random.Next(0, users.Length)];
                     while (approver == task.submittedby)
@@ -359,7 +368,7 @@ namespace Demo.Tasks.Client
                     //For simplicity of this demo, we're not going to do a lookup for a user name.
                     taskApprover.name = $"{approver} full name";
                     task.approvers.Add(taskApprover);
-                }
+                //}
 
                 if (task.status == "complete")
                 {
