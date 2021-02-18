@@ -301,7 +301,8 @@ namespace Demo.Tasks.Client
         private async Task HandleDataGenerator()
         {
             var random = new Random();
-            string[] users = { "steve", "howard", "tim", "gina", "sarah", "kathy" };
+            string[] users = { "steve", "howard", "tim", "gina", "sarah, kathy, lori, artie, sam, david, brian, mike" };
+            string[] approvers = { "steve", "howard", "tim", "gina", "sarah", "kathy" };
             string[] taskType = {"vacation","invoice"};
             string[] status = {"pending","complete"};
 
@@ -357,10 +358,10 @@ namespace Demo.Tasks.Client
                 //for (int j = 0; j < numberOfApprovers; j++)
                 //{
                     //Get an approver, making sure we don't select the submitted by user.
-                    string approver = users[random.Next(0, users.Length)];
+                    string approver = approvers[random.Next(0, approvers.Length)];
                     while (approver == task.submittedby)
                     {
-                        approver = users[random.Next(0, users.Length)];
+                        approver = approvers[random.Next(0, approvers.Length)];
                     }
                     
                     dynamic taskApprover = new ExpandoObject();
