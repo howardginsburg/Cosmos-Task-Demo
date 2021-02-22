@@ -39,6 +39,9 @@ namespace Demo.Task
             if (((IDictionary<String, object>)task).ContainsKey("id") == false)
             {
                 task.id = Guid.NewGuid().ToString();
+
+                //In theory, we'd want the function to set the created date for new records.  However, the client data generator may set it for us
+                //to simulate date ranges.
                 if (((IDictionary<String, object>)task).ContainsKey("createddate") == false)
                 {
                     task.createddate = DateTime.UtcNow.ToString("o");
@@ -50,6 +53,9 @@ namespace Demo.Task
             {
                 //Set the ttl to 5 minutes. (60 seconds * 5 minutes)
                 task.ttl = 60 * 5;
+
+                //In theory, we'd want the function to set the completed date for new records.  However, the client data generator may set it for us
+                //to simulate date ranges.
                 if (((IDictionary<String, object>)task).ContainsKey("completeddate") == false)
                 {
                     task.completeddate = DateTime.UtcNow.ToString("o");

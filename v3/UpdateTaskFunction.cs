@@ -9,29 +9,23 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Dynamic;
 using System.Collections.Generic;
-using Microsoft.Azure.Cosmos;
 
-namespace Demo.Task
+namespace Demo.TaskDemo
 {
     /**
         UpdateTask function.
     */
     public class UpdateTaskFunction
     {
-        private CosmosClient _cosmosClient;
-        private Container _taskContainer;
-
-        //CosmosNote - In order to easily get the CosmosClient to read and update Tasks, we use dependency injection.  This is different from V2 where we can use
-        //the Cosmos function binding.
-        public UpdateTaskFunction(CosmosClient cosmosClient)
+        private CosmosHelper _cosmosHelper;
+        
+        //CosmosNote - In order to easily get the CosmosHelper to read and update Tasks, we use dependency injection.  This is different from V2 where we can use
+        //the Cosmos function binding to get the DocumentClient, and then build the CosmosHelper. 
+        public UpdateTaskFunction(CosmosHelper cosmosHelper)
         {
-             //Get the cosmos client object that our Startup.cs creates through dependency injection.
-            _cosmosClient = cosmosClient;
-
-            //Get the container we need to query.
-            _taskContainer = _cosmosClient.GetContainer("Tasks","TaskItem");
+            //Get the cosmos client object that our Startup.cs creates through dependency injection.
+            _cosmosHelper = cosmosHelper;
         }
-
 
          /**
             UpdateTask function.
@@ -51,6 +45,9 @@ namespace Demo.Task
             if (((IDictionary<String, object>)task).ContainsKey("id") == false) 
             {
                 task.id = Guid.NewGuid().ToString();
+
+                //In theory, we'd want the function to set the created date for new records.  However, the client data generator may set it for us
+                //to simulate date ranges.
                 if (((IDictionary<String, object>)task).ContainsKey("createddate") == false)
                 {
                     task.createddate = DateTime.UtcNow.ToString("o");
@@ -62,6 +59,9 @@ namespace Demo.Task
             {
                 //Set the ttl to 5 minutes. (60 seconds * 5 minutes)
                 task.ttl = 60 * 5;
+
+                //In theory, we'd want the function to set the completed date for new records.  However, the client data generator may set it for us
+                //to simulate date ranges.
                 if (((IDictionary<String, object>)task).ContainsKey("completeddate") == false)
                 {
                     task.completeddate = DateTime.UtcNow.ToString("o");
@@ -69,8 +69,7 @@ namespace Demo.Task
             }
 
             //CosmosNote - Upsert the document in cosmos and return the task id.  This is different from V2 where we use a Document output binding to handle it for us.
-            var result = await _taskContainer.UpsertItemAsync<Object>(item: task, partitionKey: new PartitionKey(task.id));
-            log.LogInformation($"Upserted task {task.id} with RU charge {result.RequestCharge}");
+            await _cosmosHelper.UpsertItemAsync("Tasks","TaskItem",task,false,log);
             return new OkObjectResult(task.id);
         }
     }

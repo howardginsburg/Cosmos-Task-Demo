@@ -17,7 +17,7 @@ namespace Demo.TaskDemo
         TaskUpdateChangeFeed function that manages the task view for approvers.  As tasks change, the Cosmos changefeed will fire.
     */
     public class TaskUpdateChangeFeedFunction
-    { 
+    {
                
         /**
             TaskUpdateChangeFeed function.
@@ -41,6 +41,11 @@ namespace Demo.TaskDemo
             ExecutionContext context, 
             ILogger log)
         {
+            //CosmosNote - in our v2 code example, we get the DocumentClient from the binding.  Thus, we instantiate
+            //the CosmosHelper here and pass in the handle to the client.  In the v3 example, the CosmosClient is
+            //created when the singleton object is instantiated in Startup.cs.
+            CosmosHelper cosmosHelper = new CosmosHelper(_cosmosClient);
+
             //Loop through all the v2 Documents we receive in the change feed.				
             if (input != null && input.Count > 0)
             {
@@ -51,130 +56,63 @@ namespace Demo.TaskDemo
                     //Convert the document into a dynamic object so we can work with it without binding to a model.
                     dynamic task = JsonConvert.DeserializeObject<ExpandoObject>(document.ToString(), new ExpandoObjectConverter());
 
-                    //Get the TaskItemView for this submitter.
-                    while (true)
+                    //Get the TaskItemView for this submitter and update it accordingly.  If there is an etag discrepancy, we'll get a false back and need to try again.
+                    bool taskOwnerViewResult = false;
+                    while (taskOwnerViewResult == false)
                     {
-                        try
-                        {
-                            dynamic taskOwnerView = await getTaskView(task.submittedby, _cosmosClient, log);
-                            handleTaskApprovals(task, taskOwnerView, log);
-                            await saveTaskView(taskOwnerView, _cosmosClient, log);
-                            break;
-                        }
-                        catch (DocumentClientException ex)
-                        {
-                            //If the document etag did not match, retrieve again and try again.
-                            if (!ex.StatusCode.Equals(System.Net.HttpStatusCode.PreconditionFailed))
-                            {
-                                throw ex;
-                            }
-                        }
+                        dynamic taskOwnerView = await getTaskView(cosmosHelper, task.submittedby, log);
+                        handleTaskApprovals(task, taskOwnerView, log);
+                        taskOwnerViewResult = await saveTaskView(cosmosHelper, taskOwnerView, log);
                     }
                     
-                    //Loop through all the approvers in the document.
+                    //Loop through all the approvers in the document and update them.  If there is an etag discrepancy, we'll get a false back and need to try again.
                     foreach(dynamic approver in task.approvers)
                     {
-                        while (true)
+                        bool taskApproverResult = false;
+                        while (taskApproverResult == false)
                         {
-                            try
-                            {    
-                                //Get the TaskItemView for this approver.
-
-                                dynamic taskApproverView = await getTaskView(approver.id, _cosmosClient, log);
-                                handleTaskApprovals(task, taskApproverView, log);
-                                await saveTaskView(taskApproverView, _cosmosClient, log);
-                                break;
-                            }
-                            catch (DocumentClientException ex)
-                            {
-                                //If the document etag did not match, retrieve again and try again.
-                                if (!ex.StatusCode.Equals(System.Net.HttpStatusCode.PreconditionFailed))
-                                {
-                                    throw ex;
-                                }
-                            }
+                            dynamic taskApproverView = await getTaskView(cosmosHelper, approver.id, log);
+                            handleTaskApprovals(task, taskApproverView, log);
+                            taskApproverResult = await saveTaskView(cosmosHelper, taskApproverView, log);
                         }
                     }
-                    
                 }
             }
 
         }
 
 
-        private async Task<dynamic> getTaskView(dynamic id, DocumentClient _cosmosClient, ILogger log)
+        private async Task<dynamic> getTaskView(CosmosHelper _cosmosHelper, dynamic id, ILogger log)
         {
             dynamic taskView = null;
-            try{
-                //CosmosNote - Using the Comsos V2 SDK, read the TaskItemView as a Document type.  
-                //This allows us to not have to have a model class before turning it into a dynamic object.
-                RequestOptions options = new RequestOptions();
-                options.PartitionKey = new PartitionKey(id);
-
-                Uri uri = UriFactory.CreateDocumentUri("Tasks","TaskViews",id);
-                Document document = await _cosmosClient.ReadDocumentAsync(uri, options);
+            
+            //Use the CosmosHelper to get the TaskView.
+            dynamic document = await _cosmosHelper.ReadItemAsync("Tasks","TaskViews",id, log);
+            if (document != null)
+            {
                 taskView = JsonConvert.DeserializeObject<ExpandoObject>(document.ToString(), new ExpandoObjectConverter());
             }
-            catch (DocumentClientException ex)
+            else
             {
-                //If we don't have a document in Cosmos for this user, a NotFound exception will be thrown and we can create an initial stub to use.
-                if (ex.StatusCode.Equals(System.Net.HttpStatusCode.NotFound))
-                {
-                    log.LogInformation($"User {id} does not have a TaskItemView.  A new document will be created.");
-                    taskView = new ExpandoObject();
-                    taskView.id = id;
-                    taskView.mytasks = new List<ExpandoObject>();
-                    taskView.approvaltasks = new List<ExpandoObject>();
-                }
-                else{
-                    throw;
-                }
-
+                log.LogInformation($"User {id} does not have a TaskItemView.  A new document will be created.");
+                taskView = new ExpandoObject();
+                taskView.id = id;
+                taskView.mytasks = new List<ExpandoObject>();
+                taskView.approvaltasks = new List<ExpandoObject>();
             }
             return taskView;
         }
 
-        private async System.Threading.Tasks.Task saveTaskView(dynamic taskView, DocumentClient _cosmosClient, ILogger log)
+        private async System.Threading.Tasks.Task<bool> saveTaskView(CosmosHelper _cosmosHelper, dynamic taskView, ILogger log)
         {
-            RequestOptions options = new RequestOptions();
-            options.PartitionKey = new PartitionKey(taskView.id);
-
-            //If this is an existing document, it will have an etag.  Lets make sure we don't overwrite the view if
-            //it was updated by a parallel function running.                
-            if (((IDictionary<String, object>)taskView).ContainsKey("_etag"))
-            {
-                AccessCondition accessCondition = new AccessCondition();
-                accessCondition.Condition = taskView._etag;
-                accessCondition.Type = AccessConditionType.IfMatch;
-                options.AccessCondition = accessCondition;
-            }
-            
-            
             //If they still have tasks to approve, go ahead and upsert the document.  Otherwise, delete it for good housekeeping.
             if ((taskView.mytasks.Count > 0) || (taskView.approvaltasks.Count > 0))
             {
-                //CosmosNote - to upsert a document in V2, we must build the URI for the collection.  V3 handles this differently requiring the document and the partition.
-                Uri uri = UriFactory.CreateDocumentCollectionUri("Tasks","TaskViews");
-                var result = await _cosmosClient.UpsertDocumentAsync(uri, taskView,options);
-                log.LogInformation($"Upserted TaskItemView for  {taskView.id} with RU charge {result.RequestCharge}");
+                return await _cosmosHelper.UpsertItemAsync("Tasks","TaskViews",taskView,true,log);
             }
             else
             {
-                //CosmosNote - to delete a document in V2, we need the URI of the document.  V3 handles this differently requiring the document id and partition key.
-                try{
-                    
-                    Uri uri = UriFactory.CreateDocumentUri("Tasks","TaskViews",taskView.id);
-                    var result = await _cosmosClient.DeleteDocumentAsync(uri,options);
-                    log.LogInformation($"Deleted TaskItemView document for  {taskView.id} as there are no remaining approvals with RU charge {result.RequestCharge}");
-                }
-                catch (DocumentClientException ex)
-                {
-                    //If we don't have a document in Cosmos for this user, a NotFound exception will be thrown and we can create an initial stub to use.
-                    if (!ex.StatusCode.Equals(System.Net.HttpStatusCode.NotFound))
-                    {
-                        throw ex;
-                    }
-                }
+                return await _cosmosHelper.DeleteItemAsync("Tasks","TaskViews",taskView,true,log);
             }
         }
 
